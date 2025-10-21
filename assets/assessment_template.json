@@ -1,0 +1,51 @@
+{
+  "platform_name": "Example Platform",
+  "assessment_date": "2024-01-01",
+  "assessor": "Your Name",
+  
+  "core_definition": {
+    "sides_defined": "yes/no",
+    "value_unit_clear": "yes/no", 
+    "interaction_designed": "yes/no",
+    "governance_defined": "yes/no",
+    "control_mechanism": "yes/no",
+    "notes": "Additional context about platform core"
+  },
+  
+  "network_effects": {
+    "same_side_strength": "strong/moderate/weak/none",
+    "cross_side_strength": "strong/moderate/weak/none",
+    "standalone_value": "yes/no",
+    "network_description": "Describe how network effects work"
+  },
+  
+  "seeding_strategy": {
+    "marquee_users": "yes/no",
+    "subsidy_strategy": "strategic/minimal/none",
+    "chicken_egg_solution": "yes/no",
+    "single_side_start": "yes/no",
+    "seeding_description": "Describe your seeding approach"
+  },
+  
+  "competitive_dynamics": {
+    "multi_homing_costs": "high/moderate/low",
+    "differentiation": "yes/no",
+    "switching_costs": "high/moderate/low",
+    "competitive_landscape": "Describe key competitors"
+  },
+  
+  "value_creation": {
+    "reduces_search_costs": "yes/no",
+    "reduces_transaction_costs": "yes/no",
+    "trust_mechanisms": "yes/no",
+    "value_proposition": "Core value proposition statement"
+  },
+  
+  "pricing_strategy": {
+    "revenue_model_clear": "yes/no",
+    "pricing_side_identified": "yes/no",
+    "pricing_structure": "rake/subscription/freemium/ads/undefined",
+    "pricing_sustainable": "yes/no",
+    "pricing_details": "Describe pricing approach"
+  }
+}

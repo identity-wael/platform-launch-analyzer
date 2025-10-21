@@ -1,0 +1,51 @@
+{
+  "platform_name": "AirBnB (Early Stage Assessment)",
+  "assessment_date": "2008 Simulation",
+  "assessor": "Example Assessment",
+  
+  "core_definition": {
+    "sides_defined": "yes",
+    "value_unit_clear": "yes", 
+    "interaction_designed": "yes",
+    "governance_defined": "yes",
+    "control_mechanism": "yes",
+    "notes": "Two clear sides (Hosts/Guests), listing as value unit, detailed booking flow, review system planned, control via platform-mediated payments"
+  },
+  
+  "network_effects": {
+    "same_side_strength": "weak",
+    "cross_side_strength": "strong",
+    "standalone_value": "yes",
+    "network_description": "Strong cross-side effects - more hosts attracts guests and vice versa. Individual hosts can list properties without others (standalone value)"
+  },
+  
+  "seeding_strategy": {
+    "marquee_users": "yes",
+    "subsidy_strategy": "minimal",
+    "chicken_egg_solution": "yes",
+    "single_side_start": "yes",
+    "seeding_description": "Focus on major events (Democratic Convention) for initial supply/demand spike. Founders personally recruit hosts and professionally photograph properties"
+  },
+  
+  "competitive_dynamics": {
+    "multi_homing_costs": "low",
+    "differentiation": "yes",
+    "switching_costs": "moderate",
+    "competitive_landscape": "Competing with hotels and Craigslist. Differentiated by trust layer, reviews, and payment protection"
+  },
+  
+  "value_creation": {
+    "reduces_search_costs": "yes",
+    "reduces_transaction_costs": "yes",
+    "trust_mechanisms": "yes",
+    "value_proposition": "Unique accommodations with local experience, trust through reviews and secure payments"
+  },
+  
+  "pricing_strategy": {
+    "revenue_model_clear": "yes",
+    "pricing_side_identified": "yes",
+    "pricing_structure": "rake",
+    "pricing_sustainable": "yes",
+    "pricing_details": "6-12% commission on bookings, charged to both sides but primarily to guests"
+  }
+}
