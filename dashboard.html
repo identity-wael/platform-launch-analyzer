@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Launch Analytics - Advanced Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0b0d;
+            --bg-secondary: #13151a;
+            --bg-tertiary: #1a1d23;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #ff006e;
+            --accent-tertiary: #ffbe0b;
+            --accent-success: #00f593;
+            --text-primary: #ffffff;
+            --text-secondary: #8b92a7;
+            --text-tertiary: #5a6378;
+            --border-color: #2a2d35;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #00d4ff 0%, #00f593 100%);
+            --gradient-3: linear-gradient(135deg, #ff006e 0%, #ffbe0b 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 50%, var(--accent-primary) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, var(--accent-secondary) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 20%, var(--accent-tertiary) 0%, transparent 50%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            background: rgba(19, 21, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-tab {
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-tab.active {
+            color: var(--text-primary);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .nav-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-header {
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-header.primary {
+            background: var(--gradient-2);
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-header:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Main Dashboard */
+        .dashboard {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Metrics Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-2);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.1);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-change {
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-change.positive {
+            color: var(--accent-success);
+        }
+
+        .metric-change.negative {
+            color: var(--accent-secondary);
+        }
+
+        /* Main Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Platform Visualization */
+        .viz-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 500px;
+            position: relative;
+        }
+
+        .viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .viz-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .viz-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .viz-control {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .viz-control.active {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        #platform-viz {
+            width: 100%;
+            height: calc(100% - 50px);
+            position: relative;
+        }
+
+        /* Activity Feed */
+        .activity-feed {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 500px;
+            overflow-y: auto;
+        }
+
+        .activity-header {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--accent-primary);
+            transition: all 0.2s ease;
+        }
+
+        .activity-item:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-title {
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 350px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        /* Assessment Section */
+        .assessment-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .assessment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .assessment-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .assessment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .assessment-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .assessment-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .assessment-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .assessment-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .assessment-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-tabs {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard {
+                padding: 1rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .5;
+            }
+        }
+
+        /* Tooltips */
+        .tooltip {
+            position: absolute;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <h1>PLATFORM ANALYTICS</h1>
+        </div>
+        <nav>
+            <ul class="nav-tabs">
+                <li class="nav-tab active" onclick="switchTab('overview')">Overview</li>
+                <li class="nav-tab" onclick="switchTab('analytics')">Analytics</li>
+                <li class="nav-tab" onclick="switchTab('assessment')">Assessment</li>
+                <li class="nav-tab" onclick="switchTab('network')">Network View</li>
+            </ul>
+        </nav>
+        <div class="header-actions">
+            <button class="btn-header">Export Data</button>
+            <button class="btn-header primary" onclick="startNewAssessment()">New Assessment</button>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard">
+        <!-- Metrics Cards -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Platform Viability</div>
+                <div class="metric-value">85.7%</div>
+                <div class="metric-change positive">
+                    <span>↑ 12.3%</span>
+                    <span>vs last assessment</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Network Effects</div>
+                <div class="metric-value">Strong</div>
+                <div class="metric-change positive">
+                    <span>Cross-side: High</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Active Assessments</div>
+                <div class="metric-value">247</div>
+                <div class="metric-change positive">
+                    <span>↑ 18%</span>
+                    <span>this week</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Success Rate</div>
+                <div class="metric-value">73%</div>
+                <div class="metric-change negative">
+                    <span>↓ 2%</span>
+                    <span>from baseline</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Platform Visualization -->
+            <div class="viz-container">
+                <div class="viz-header">
+                    <div class="viz-title">Platform Network Visualization</div>
+                    <div class="viz-controls">
+                        <button class="viz-control active" onclick="changeVizMode('network')">Network</button>
+                        <button class="viz-control" onclick="changeVizMode('flow')">Flow</button>
+                        <button class="viz-control" onclick="changeVizMode('timeline')">Timeline</button>
+                    </div>
+                </div>
+                <div id="platform-viz"></div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="activity-feed">
+                <div class="activity-header">Recent Activity</div>
+                <div class="activity-item">
+                    <div class="activity-time">2 minutes ago</div>
+                    <div class="activity-title">New Assessment Completed</div>
+                    <div class="activity-desc">E-commerce marketplace scored 78% viability</div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-time">15 minutes ago</div>
+                    <div class="activity-title">Network Effects Analysis</div>
+                    <div class="activity-desc">Strong cross-side effects detected in sharing economy model</div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-time">1 hour ago</div>
+                    <div class="activity-title">Tipping Point Reached</div>
+                    <div class="activity-desc">Platform #142 achieved critical mass threshold</div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-time">3 hours ago</div>
+                    <div class="activity-title">Competitive Analysis Update</div>
+                    <div class="activity-desc">Multi-homing costs evaluation completed</div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-time">5 hours ago</div>
+                    <div class="activity-title">Seeding Strategy Validated</div>
+                    <div class="activity-desc">Marquee user acquisition strategy approved</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Assessment Scores Distribution</div>
+                </div>
+                <canvas id="scoresChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Platform Categories Performance</div>
+                </div>
+                <canvas id="categoriesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Assessment Section -->
+        <div class="assessment-section">
+            <div class="assessment-header">
+                <div class="assessment-title">Launch Assessment Tools</div>
+                <button class="btn-header">View All Tools</button>
+            </div>
+            <div class="assessment-grid">
+                <div class="assessment-card" onclick="startQuickCheck()">
+                    <div class="assessment-icon">⚡</div>
+                    <div class="assessment-name">Quick Check</div>
+                    <div class="assessment-desc">5-minute rapid assessment</div>
+                </div>
+                <div class="assessment-card" onclick="startFullAssessment()">
+                    <div class="assessment-icon">📊</div>
+                    <div class="assessment-name">Full Analysis</div>
+                    <div class="assessment-desc">Comprehensive evaluation</div>
+                </div>
+                <div class="assessment-card" onclick="loadExample()">
+                    <div class="assessment-icon">🏆</div>
+                    <div class="assessment-name">Case Studies</div>
+                    <div class="assessment-desc">Learn from successes</div>
+                </div>
+                <div class="assessment-card" onclick="openNetworkBuilder()">
+                    <div class="assessment-icon">🔗</div>
+                    <div class="assessment-name">Network Builder</div>
+                    <div class="assessment-desc">Design platform architecture</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Charts
+        Chart.defaults.color = '#8b92a7';
+        Chart.defaults.borderColor = '#2a2d35';
+
+        // Scores Distribution Chart
+        const scoresCtx = document.getElementById('scoresChart').getContext('2d');
+        const scoresChart = new Chart(scoresCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Average Score',
+                    data: [65, 68, 72, 78, 82, 85],
+                    borderColor: '#00d4ff',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Success Threshold',
+                    data: [75, 75, 75, 75, 75, 75],
+                    borderColor: '#00f593',
+                    borderDash: [5, 5],
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: '#2a2d35'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: '#2a2d35'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Categories Performance Chart
+        const categoriesCtx = document.getElementById('categoriesChart').getContext('2d');
+        const categoriesChart = new Chart(categoriesCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Core Definition', 'Network Effects', 'Seeding', 'Competition', 'Value Creation', 'Pricing'],
+                datasets: [{
+                    label: 'Current Assessment',
+                    data: [90, 75, 85, 60, 95, 88],
+                    borderColor: '#00d4ff',
+                    backgroundColor: 'rgba(0, 212, 255, 0.2)',
+                    pointBackgroundColor: '#00d4ff',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#00d4ff'
+                }, {
+                    label: 'Industry Average',
+                    data: [70, 65, 60, 55, 70, 65],
+                    borderColor: '#ff006e',
+                    backgroundColor: 'rgba(255, 0, 110, 0.1)',
+                    pointBackgroundColor: '#ff006e',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#ff006e'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            color: '#2a2d35'
+                        },
+                        grid: {
+                            color: '#2a2d35'
+                        },
+                        pointLabels: {
+                            color: '#8b92a7'
+                        },
+                        ticks: {
+                            color: '#5a6378',
+                            backdropColor: 'transparent'
+                        },
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Platform Network Visualization using D3
+        function initPlatformViz() {
+            const container = document.getElementById('platform-viz');
+            const width = container.clientWidth;
+            const height = container.clientHeight - 50;
+
+            // Clear existing
+            d3.select('#platform-viz').selectAll('*').remove();
+
+            const svg = d3.select('#platform-viz')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Create gradient definitions
+            const defs = svg.append('defs');
+
+            const gradient1 = defs.append('radialGradient')
+                .attr('id', 'coreGradient');
+            gradient1.append('stop')
+                .attr('offset', '0%')
+                .attr('stop-color', '#00d4ff')
+                .attr('stop-opacity', 0.8);
+            gradient1.append('stop')
+                .attr('offset', '100%')
+                .attr('stop-color', '#00d4ff')
+                .attr('stop-opacity', 0.1);
+
+            // Generate nodes data
+            const nodes = [];
+
+            // Core platform
+            nodes.push({
+                id: 'core',
+                x: width / 2,
+                y: height / 2,
+                r: 60,
+                type: 'core',
+                label: 'CORE PLATFORM'
+            });
+
+            // Side A nodes
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI;
+                const distance = 150 + Math.random() * 50;
+                nodes.push({
+                    id: `sideA-${i}`,
+                    x: width / 2 - distance * Math.cos(angle),
+                    y: height / 2 + distance * Math.sin(angle),
+                    r: 15 + Math.random() * 10,
+                    type: 'sideA',
+                    label: `Supply ${i + 1}`
+                });
+            }
+
+            // Side B nodes
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI;
+                const distance = 150 + Math.random() * 50;
+                nodes.push({
+                    id: `sideB-${i}`,
+                    x: width / 2 + distance * Math.cos(angle),
+                    y: height / 2 + distance * Math.sin(angle),
+                    r: 15 + Math.random() * 10,
+                    type: 'sideB',
+                    label: `Demand ${i + 1}`
+                });
+            }
+
+            // Create links
+            const links = [];
+            nodes.forEach((node, i) => {
+                if (node.type !== 'core' && Math.random() > 0.3) {
+                    links.push({
+                        source: 0,
+                        target: i,
+                        value: Math.random()
+                    });
+                }
+            });
+
+            // Draw links
+            const link = svg.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('x1', d => nodes[d.source].x)
+                .attr('y1', d => nodes[d.source].y)
+                .attr('x2', d => nodes[d.target].x)
+                .attr('y2', d => nodes[d.target].y)
+                .attr('stroke', d => nodes[d.target].type === 'sideA' ? '#ff006e' : '#00d4ff')
+                .attr('stroke-width', d => d.value * 2)
+                .attr('stroke-opacity', 0.3);
+
+            // Draw nodes
+            const node = svg.append('g')
+                .selectAll('circle')
+                .data(nodes)
+                .enter().append('g');
+
+            // Add circles
+            node.append('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', d => d.r)
+                .attr('fill', d => {
+                    if (d.type === 'core') return 'url(#coreGradient)';
+                    if (d.type === 'sideA') return '#ff006e';
+                    return '#00d4ff';
+                })
+                .attr('fill-opacity', d => d.type === 'core' ? 1 : 0.6)
+                .attr('stroke', d => {
+                    if (d.type === 'core') return '#00d4ff';
+                    if (d.type === 'sideA') return '#ff006e';
+                    return '#00d4ff';
+                })
+                .attr('stroke-width', 2);
+
+            // Add labels for core
+            node.filter(d => d.type === 'core')
+                .append('text')
+                .attr('x', d => d.x)
+                .attr('y', d => d.y)
+                .attr('text-anchor', 'middle')
+                .attr('dy', '.35em')
+                .attr('fill', '#ffffff')
+                .attr('font-size', '12px')
+                .attr('font-weight', '600')
+                .text(d => d.label);
+
+            // Add animation
+            function animateLinks() {
+                link.transition()
+                    .duration(2000)
+                    .attr('stroke-opacity', 0.6)
+                    .transition()
+                    .duration(2000)
+                    .attr('stroke-opacity', 0.3)
+                    .on('end', animateLinks);
+            }
+            animateLinks();
+
+            // Add pulsing effect to nodes
+            function pulseNodes() {
+                node.selectAll('circle')
+                    .filter(d => d.type !== 'core')
+                    .transition()
+                    .duration(1000)
+                    .attr('r', d => d.r * 1.1)
+                    .transition()
+                    .duration(1000)
+                    .attr('r', d => d.r)
+                    .on('end', function() {
+                        d3.select(this.parentNode).select('circle')
+                            .transition()
+                            .delay(Math.random() * 2000)
+                            .on('end', pulseNodes);
+                    });
+            }
+            pulseNodes();
+        }
+
+        // Initialize visualization on load
+        window.addEventListener('load', () => {
+            initPlatformViz();
+        });
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            initPlatformViz();
+        });
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Here you would switch content based on tab
+            console.log('Switching to tab:', tab);
+        }
+
+        // Visualization mode switching
+        function changeVizMode(mode) {
+            document.querySelectorAll('.viz-control').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Here you would change visualization based on mode
+            if (mode === 'network') {
+                initPlatformViz();
+            } else if (mode === 'flow') {
+                // Implement flow visualization
+                console.log('Flow mode');
+            } else if (mode === 'timeline') {
+                // Implement timeline visualization
+                console.log('Timeline mode');
+            }
+        }
+
+        // Assessment functions
+        function startNewAssessment() {
+            window.location.href = 'index.html';
+        }
+
+        function startQuickCheck() {
+            window.location.href = 'index.html#quick-check';
+        }
+
+        function startFullAssessment() {
+            window.location.href = 'index.html#full-assessment';
+        }
+
+        function loadExample() {
+            window.location.href = 'index.html#example';
+        }
+
+        function openNetworkBuilder() {
+            console.log('Opening network builder...');
+        }
+
+        // Simulate real-time updates
+        setInterval(() => {
+            // Update random metric
+            const metrics = document.querySelectorAll('.metric-value');
+            const randomMetric = metrics[Math.floor(Math.random() * metrics.length)];
+
+            if (randomMetric.textContent.includes('%')) {
+                const currentValue = parseFloat(randomMetric.textContent);
+                const change = (Math.random() - 0.5) * 2;
+                randomMetric.textContent = (currentValue + change).toFixed(1) + '%';
+            }
+        }, 5000);
+
+        // Add smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
