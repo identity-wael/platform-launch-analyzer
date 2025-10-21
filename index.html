@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Launch Analyzer - Assessment Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --gray-800: #1e293b;
+            --gray-700: #334155;
+            --gray-600: #475569;
+            --gray-500: #64748b;
+            --gray-400: #94a3b8;
+            --gray-300: #cbd5e1;
+            --gray-200: #e2e8f0;
+            --gray-100: #f1f5f9;
+            --white: #ffffff;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: var(--white);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            opacity: 0.1;
+            animation: pulse 20s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.1; }
+            50% { transform: scale(1.1); opacity: 0.15; }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--gray-400);
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Mode Selection */
+        .mode-selection {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .mode-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-700);
+            border-radius: 16px;
+            padding: 30px;
+            width: 300px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+        }
+
+        .mode-card:hover::before {
+            opacity: 0.1;
+        }
+
+        .mode-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-light);
+            position: relative;
+            z-index: 1;
+        }
+
+        .mode-card p {
+            color: var(--gray-400);
+            font-size: 0.95rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .time-indicator {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--white);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Assessment Container */
+        .assessment-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .assessment-container.active {
+            display: block;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-700);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-700);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-label {
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        /* Question Card */
+        .question-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-700);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .question-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--white);
+        }
+
+        .question {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--gray-200);
+        }
+
+        /* Answer Options */
+        .answer-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .answer-btn {
+            padding: 12px 24px;
+            background: var(--gray-800);
+            border: 2px solid var(--gray-700);
+            border-radius: 8px;
+            color: var(--white);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .answer-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .answer-btn.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Results Section */
+        .results-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        .overall-score {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-700);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .score-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-circle-bg {
+            fill: none;
+            stroke: var(--gray-700);
+            stroke-width: 15;
+        }
+
+        .score-circle-progress {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-width: 15;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .score-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .score-label {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .score-description {
+            font-size: 1.1rem;
+            color: var(--gray-400);
+        }
+
+        /* Category Scores */
+        .category-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .category-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-700);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-name {
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        .category-score {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .category-bar {
+            height: 6px;
+            background: var(--gray-700);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .category-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+
+        .feedback-list {
+            list-style: none;
+        }
+
+        .feedback-item {
+            padding: 5px 0;
+            color: var(--gray-300);
+            font-size: 0.9rem;
+        }
+
+        .feedback-item.success {
+            color: var(--success);
+        }
+
+        .feedback-item.warning {
+            color: var(--warning);
+        }
+
+        .feedback-item.danger {
+            color: var(--danger);
+        }
+
+        /* Recommendations */
+        .recommendations {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-700);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .recommendations h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--primary-light);
+        }
+
+        .recommendation-list {
+            list-style: none;
+        }
+
+        .recommendation-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--gray-800);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-size: 1rem;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--gray-800);
+            color: var(--white);
+            border: 2px solid var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-700);
+            border-color: var(--gray-600);
+        }
+
+        /* Quick Check Specific */
+        .quick-check-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .quick-check-question {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-700);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .quick-check-question:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .quick-check-text {
+            flex: 1;
+            margin-right: 20px;
+            font-size: 1.05rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: var(--gray-700);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--success);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: var(--white);
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .mode-selection {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .category-scores {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--gray-600);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Platform Launch Analyzer</h1>
+            <p class="subtitle">Data-driven assessment tool for platform business ideas based on the Azoulay & Tucker framework</p>
+        </div>
+
+        <!-- Mode Selection -->
+        <div id="modeSelection" class="mode-selection">
+            <div class="mode-card" onclick="startQuickCheck()">
+                <h3>Quick Check</h3>
+                <p>Rapid assessment with 10 yes/no questions to identify critical red flags</p>
+                <span class="time-indicator">5 minutes</span>
+            </div>
+            <div class="mode-card" onclick="startFullAssessment()">
+                <h3>Full Assessment</h3>
+                <p>Comprehensive evaluation across 6 key dimensions with detailed scoring</p>
+                <span class="time-indicator">15 minutes</span>
+            </div>
+            <div class="mode-card" onclick="loadExample()">
+                <h3>Example: AirBnB</h3>
+                <p>See how a successful platform scores with pre-filled AirBnB assessment</p>
+                <span class="time-indicator">Instant</span>
+            </div>
+        </div>
+
+        <!-- Quick Check Container -->
+        <div id="quickCheckContainer" class="assessment-container">
+            <div class="progress-container">
+                <div class="progress-text">
+                    <span class="category-label">Quick Check Assessment</span>
+                    <span id="quickProgress">0/10</span>
+                </div>
+            </div>
+            <div class="quick-check-container" id="quickCheckQuestions"></div>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="backToModeSelection()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitQuickCheck()">Get Results</button>
+            </div>
+        </div>
+
+        <!-- Full Assessment Container -->
+        <div id="assessmentContainer" class="assessment-container">
+            <div class="progress-container">
+                <div class="progress-text">
+                    <span id="categoryLabel" class="category-label">Getting Started</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+
+            <div id="questionCard" class="question-card">
+                <h3 id="categoryTitle">Welcome</h3>
+                <div id="questionText" class="question">Let's begin your platform assessment...</div>
+                <div id="answerOptions" class="answer-options"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="previousQuestion()">Previous</button>
+                <button class="btn btn-primary" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="results-container">
+            <div class="overall-score">
+                <div class="score-circle">
+                    <svg width="200" height="200">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="100" cy="100" r="85" class="score-circle-bg"></circle>
+                        <circle cx="100" cy="100" r="85" class="score-circle-progress"
+                                stroke-dasharray="534" stroke-dashoffset="534"></circle>
+                    </svg>
+                    <div class="score-text" id="scoreText">0%</div>
+                </div>
+                <div class="score-label" id="scoreLabel">Calculating...</div>
+                <div class="score-description" id="scoreDescription">Processing your assessment...</div>
+            </div>
+
+            <div id="categoryScores" class="category-scores"></div>
+
+            <div class="recommendations">
+                <h2>Strategic Recommendations</h2>
+                <ul id="recommendationsList" class="recommendation-list"></ul>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="backToModeSelection()">New Assessment</button>
+                <button class="btn btn-primary" onclick="downloadReport()">Download Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Assessment Data Structure
+        const assessmentData = {
+            quickCheck: [
+                "Can you name your platform's sides clearly?",
+                "Do you solve a real search OR transaction cost problem?",
+                "Is there a clear value exchange between sides?",
+                "Can you explain your platform in one sentence?",
+                "Will network effects kick in at reasonable scale?",
+                "Do you have a path to overcome chicken-egg problem?",
+                "Is there differentiation from existing solutions?",
+                "Can you start without burning millions in subsidies?",
+                "Does the platform offer ANY stand-alone value?",
+                "Do you know which side will pay?"
+            ],
+            fullAssessment: {
+                coreDefinition: {
+                    title: "Core Definition (Coring)",
+                    questions: [
+                        {
+                            text: "Have you clearly defined all sides of your platform?",
+                            key: "sides_defined",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Is the unit of value on your platform clearly defined?",
+                            key: "value_unit_clear",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Have you designed the core interaction in detail?",
+                            key: "interaction_designed",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Are governance rules and policies defined?",
+                            key: "governance_defined",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Do you have a strategy to maintain control of the platform?",
+                            key: "control_mechanism",
+                            options: ["Yes", "No"]
+                        }
+                    ]
+                },
+                networkEffects: {
+                    title: "Network Effects Potential",
+                    questions: [
+                        {
+                            text: "Strength of same-side network effects?",
+                            key: "same_side_strength",
+                            options: ["Strong", "Moderate", "Weak", "None"]
+                        },
+                        {
+                            text: "Strength of cross-side network effects?",
+                            key: "cross_side_strength",
+                            options: ["Strong", "Moderate", "Weak", "None"]
+                        },
+                        {
+                            text: "Does the platform offer stand-alone value?",
+                            key: "standalone_value",
+                            options: ["Yes", "No"]
+                        }
+                    ]
+                },
+                seedingStrategy: {
+                    title: "Seeding Strategy",
+                    questions: [
+                        {
+                            text: "Do you have a strategy to attract marquee users?",
+                            key: "marquee_users",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "What is your subsidization strategy?",
+                            key: "subsidy_strategy",
+                            options: ["Strategic", "Minimal", "None"]
+                        },
+                        {
+                            text: "Do you have a clear solution to the chicken-egg problem?",
+                            key: "chicken_egg_solution",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Can you start with single-side focus?",
+                            key: "single_side_start",
+                            options: ["Yes", "No"]
+                        }
+                    ]
+                },
+                competitiveDynamics: {
+                    title: "Competitive Dynamics (Tipping)",
+                    questions: [
+                        {
+                            text: "Multi-homing costs for users?",
+                            key: "multi_homing_costs",
+                            options: ["High", "Moderate", "Low"]
+                        },
+                        {
+                            text: "Clear differentiation from competitors?",
+                            key: "differentiation",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Switching costs for users?",
+                            key: "switching_costs",
+                            options: ["High", "Moderate", "Low"]
+                        }
+                    ]
+                },
+                valueCreation: {
+                    title: "Value Creation",
+                    questions: [
+                        {
+                            text: "Does platform significantly reduce search costs?",
+                            key: "reduces_search_costs",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Does platform significantly reduce transaction costs?",
+                            key: "reduces_transaction_costs",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Strong trust and safety mechanisms planned?",
+                            key: "trust_mechanisms",
+                            options: ["Yes", "No"]
+                        }
+                    ]
+                },
+                pricingStrategy: {
+                    title: "Pricing Strategy",
+                    questions: [
+                        {
+                            text: "Is the revenue model clearly defined?",
+                            key: "revenue_model_clear",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "Have you identified which side to charge?",
+                            key: "pricing_side_identified",
+                            options: ["Yes", "No"]
+                        },
+                        {
+                            text: "What is your pricing structure?",
+                            key: "pricing_structure",
+                            options: ["Rake", "Subscription", "Freemium", "Ads", "Undefined"]
+                        },
+                        {
+                            text: "Is the pricing model sustainable long-term?",
+                            key: "pricing_sustainable",
+                            options: ["Yes", "No"]
+                        }
+                    ]
+                }
+            }
+        };
+
+        // AirBnB Example Data
+        const airbnbExample = {
+            sides_defined: "yes",
+            value_unit_clear: "yes",
+            interaction_designed: "yes",
+            governance_defined: "yes",
+            control_mechanism: "yes",
+            same_side_strength: "weak",
+            cross_side_strength: "strong",
+            standalone_value: "yes",
+            marquee_users: "yes",
+            subsidy_strategy: "minimal",
+            chicken_egg_solution: "yes",
+            single_side_start: "yes",
+            multi_homing_costs: "low",
+            differentiation: "yes",
+            switching_costs: "moderate",
+            reduces_search_costs: "yes",
+            reduces_transaction_costs: "yes",
+            trust_mechanisms: "yes",
+            revenue_model_clear: "yes",
+            pricing_side_identified: "yes",
+            pricing_structure: "rake",
+            pricing_sustainable: "yes"
+        };
+
+        // Global State
+        let currentMode = null;
+        let currentCategoryIndex = 0;
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+        let quickCheckAnswers = {};
+
+        // Quick Check Functions
+        function startQuickCheck() {
+            currentMode = 'quickCheck';
+            document.getElementById('modeSelection').style.display = 'none';
+            document.getElementById('quickCheckContainer').classList.add('active');
+            renderQuickCheckQuestions();
+        }
+
+        function renderQuickCheckQuestions() {
+            const container = document.getElementById('quickCheckQuestions');
+            container.innerHTML = '';
+
+            assessmentData.quickCheck.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'quick-check-question';
+                questionDiv.innerHTML = `
+                    <div class="quick-check-text">${question}</div>
+                    <div class="toggle-switch" id="toggle-${index}" onclick="toggleQuickAnswer(${index})">
+                        <div class="toggle-slider"></div>
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+                quickCheckAnswers[index] = false;
+            });
+        }
+
+        function toggleQuickAnswer(index) {
+            const toggle = document.getElementById(`toggle-${index}`);
+            quickCheckAnswers[index] = !quickCheckAnswers[index];
+            if (quickCheckAnswers[index]) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+            updateQuickProgress();
+        }
+
+        function updateQuickProgress() {
+            const answered = Object.values(quickCheckAnswers).filter(a => a !== undefined).length;
+            document.getElementById('quickProgress').textContent = `${answered}/10`;
+        }
+
+        function submitQuickCheck() {
+            const yesCount = Object.values(quickCheckAnswers).filter(a => a === true).length;
+            const score = (yesCount / 10) * 100;
+
+            // Simple scoring for quick check
+            const results = {
+                score: score,
+                strengths: [],
+                risks: [],
+                recommendations: []
+            };
+
+            if (score >= 70) {
+                results.label = "Strong Potential";
+                results.description = "Your platform idea shows promise. Consider a full assessment for detailed insights.";
+                results.recommendations.push("Proceed with full assessment for detailed analysis");
+            } else if (score >= 50) {
+                results.label = "Moderate Potential";
+                results.description = "Some concerns identified. Full assessment recommended to identify specific areas for improvement.";
+                results.recommendations.push("Complete full assessment to identify weak areas");
+                results.recommendations.push("Focus on addressing fundamental platform design issues");
+            } else {
+                results.label = "Significant Concerns";
+                results.description = "Multiple red flags detected. Consider whether a platform model is appropriate.";
+                results.recommendations.push("Reconsider if platform model fits your business");
+                results.recommendations.push("Focus on fundamental value proposition");
+                results.recommendations.push("Consider traditional business model alternatives");
+            }
+
+            displayResults(results, true);
+        }
+
+        // Full Assessment Functions
+        function startFullAssessment() {
+            currentMode = 'fullAssessment';
+            currentCategoryIndex = 0;
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            document.getElementById('modeSelection').style.display = 'none';
+            document.getElementById('assessmentContainer').classList.add('active');
+            showCurrentQuestion();
+        }
+
+        function showCurrentQuestion() {
+            const categories = Object.keys(assessmentData.fullAssessment);
+            const currentCategory = assessmentData.fullAssessment[categories[currentCategoryIndex]];
+            const currentQuestion = currentCategory.questions[currentQuestionIndex];
+
+            // Update progress
+            const totalQuestions = Object.values(assessmentData.fullAssessment)
+                .reduce((sum, cat) => sum + cat.questions.length, 0);
+            const answeredQuestions = Object.keys(userAnswers).length;
+            const progress = (answeredQuestions / totalQuestions) * 100;
+
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent = Math.round(progress) + '%';
+            document.getElementById('categoryLabel').textContent = currentCategory.title;
+            document.getElementById('categoryTitle').textContent = currentCategory.title;
+            document.getElementById('questionText').textContent = currentQuestion.text;
+
+            // Render answer options
+            const optionsContainer = document.getElementById('answerOptions');
+            optionsContainer.innerHTML = '';
+            currentQuestion.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = option;
+                if (userAnswers[currentQuestion.key] === option.toLowerCase()) {
+                    btn.classList.add('selected');
+                }
+                btn.onclick = () => selectAnswer(currentQuestion.key, option.toLowerCase());
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(key, value) {
+            userAnswers[key] = value;
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.textContent.toLowerCase() === value) {
+                    btn.classList.add('selected');
+                }
+            });
+        }
+
+        function nextQuestion() {
+            const categories = Object.keys(assessmentData.fullAssessment);
+            const currentCategory = assessmentData.fullAssessment[categories[currentCategoryIndex]];
+
+            if (currentQuestionIndex < currentCategory.questions.length - 1) {
+                currentQuestionIndex++;
+            } else if (currentCategoryIndex < categories.length - 1) {
+                currentCategoryIndex++;
+                currentQuestionIndex = 0;
+            } else {
+                // Assessment complete
+                calculateResults();
+                return;
+            }
+
+            showCurrentQuestion();
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+            } else if (currentCategoryIndex > 0) {
+                currentCategoryIndex--;
+                const categories = Object.keys(assessmentData.fullAssessment);
+                const prevCategory = assessmentData.fullAssessment[categories[currentCategoryIndex]];
+                currentQuestionIndex = prevCategory.questions.length - 1;
+            }
+
+            showCurrentQuestion();
+        }
+
+        // Load Example
+        function loadExample() {
+            userAnswers = airbnbExample;
+            calculateResults(true);
+        }
+
+        // Calculate Results
+        function calculateResults(isExample = false) {
+            const scores = {
+                coreDefinition: assessCoreDefinition(userAnswers),
+                networkEffects: assessNetworkEffects(userAnswers),
+                seedingStrategy: assessSeedingStrategy(userAnswers),
+                competitiveDynamics: assessCompetitiveDynamics(userAnswers),
+                valueCreation: assessValueCreation(userAnswers),
+                pricingStrategy: assessPricingStrategy(userAnswers)
+            };
+
+            const totalScore = Object.values(scores).reduce((sum, cat) => sum + cat.score, 0);
+            const maxScore = Object.values(scores).reduce((sum, cat) => sum + cat.maxScore, 0);
+            const percentage = (totalScore / maxScore) * 100;
+
+            const results = {
+                score: percentage,
+                scores: scores,
+                strengths: [],
+                risks: [],
+                recommendations: []
+            };
+
+            // Generate recommendations based on score
+            if (percentage >= 75) {
+                results.label = "Strong Viability";
+                results.description = "Platform shows excellent potential across key dimensions";
+                results.recommendations.push("Proceed with detailed business plan development");
+                results.recommendations.push("Begin prototype/MVP development");
+                results.recommendations.push("Identify and approach marquee users");
+            } else if (percentage >= 60) {
+                results.label = "Moderate Viability";
+                results.description = "Platform has potential but needs work in key areas";
+                results.recommendations.push("Address weak areas before launch");
+                results.recommendations.push("Strengthen network effects design");
+                results.recommendations.push("Develop clearer monetization strategy");
+            } else {
+                results.label = "Weak Viability";
+                results.description = "Fundamental issues suggest reconsidering platform approach";
+                results.recommendations.push("Reconsider platform approach vs. traditional business model");
+                results.recommendations.push("If proceeding, fundamental redesign recommended");
+                results.recommendations.push("Consider pivoting to address stronger pain points");
+            }
+
+            // Add example note if applicable
+            if (isExample) {
+                results.label = "AirBnB Example - " + results.label;
+                results.description = "This is how AirBnB would have scored in its early days (circa 2008)";
+            }
+
+            displayResults(results);
+        }
+
+        // Assessment Functions (simplified versions)
+        function assessCoreDefinition(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+
+            if (answers.sides_defined === 'yes') {
+                score += 20;
+                feedback.push({text: "Clear identification of platform sides", type: "success"});
+            } else {
+                feedback.push({text: "Platform sides need clearer definition", type: "danger"});
+            }
+
+            if (answers.value_unit_clear === 'yes') {
+                score += 20;
+                feedback.push({text: "Value unit well-defined", type: "success"});
+            } else {
+                feedback.push({text: "Value unit needs clarification", type: "danger"});
+            }
+
+            if (answers.interaction_designed === 'yes') {
+                score += 20;
+                feedback.push({text: "Core interaction properly designed", type: "success"});
+            } else {
+                feedback.push({text: "Core interaction needs more work", type: "danger"});
+            }
+
+            if (answers.governance_defined === 'yes') {
+                score += 20;
+                feedback.push({text: "Governance rules established", type: "success"});
+            } else {
+                feedback.push({text: "Governance structure needs development", type: "danger"});
+            }
+
+            if (answers.control_mechanism === 'yes') {
+                score += 20;
+                feedback.push({text: "Control mechanisms identified", type: "success"});
+            } else {
+                feedback.push({text: "Need strategy for maintaining control", type: "danger"});
+            }
+
+            return { score, maxScore, feedback, name: "Core Definition" };
+        }
+
+        function assessNetworkEffects(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+
+            // Same-side effects
+            if (answers.same_side_strength === 'strong') {
+                score += 30;
+                feedback.push({text: "Strong same-side network effects", type: "success"});
+            } else if (answers.same_side_strength === 'moderate') {
+                score += 15;
+                feedback.push({text: "Moderate same-side network effects", type: "warning"});
+            } else {
+                feedback.push({text: "Weak/no same-side network effects", type: "danger"});
+            }
+
+            // Cross-side effects
+            if (answers.cross_side_strength === 'strong') {
+                score += 40;
+                feedback.push({text: "Strong cross-side network effects", type: "success"});
+            } else if (answers.cross_side_strength === 'moderate') {
+                score += 20;
+                feedback.push({text: "Moderate cross-side network effects", type: "warning"});
+            } else {
+                feedback.push({text: "Weak/no cross-side network effects", type: "danger"});
+            }
+
+            // Standalone value
+            if (answers.standalone_value === 'yes') {
+                score += 30;
+                feedback.push({text: "Platform offers stand-alone value", type: "success"});
+            } else {
+                feedback.push({text: "Limited stand-alone value - harder to seed", type: "warning"});
+            }
+
+            return { score, maxScore, feedback, name: "Network Effects" };
+        }
+
+        function assessSeedingStrategy(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+
+            if (answers.marquee_users === 'yes') {
+                score += 30;
+                feedback.push({text: "Marquee user strategy identified", type: "success"});
+            } else {
+                feedback.push({text: "No marquee user strategy", type: "danger"});
+            }
+
+            if (answers.subsidy_strategy === 'strategic') {
+                score += 20;
+                feedback.push({text: "Strategic subsidization planned", type: "success"});
+            } else if (answers.subsidy_strategy === 'minimal') {
+                score += 10;
+                feedback.push({text: "Limited subsidization planned", type: "warning"});
+            } else {
+                feedback.push({text: "No clear subsidization strategy", type: "warning"});
+            }
+
+            if (answers.chicken_egg_solution === 'yes') {
+                score += 30;
+                feedback.push({text: "Clear solution to chicken-egg problem", type: "success"});
+            } else {
+                feedback.push({text: "Chicken-egg problem not addressed", type: "danger"});
+            }
+
+            if (answers.single_side_start === 'yes') {
+                score += 20;
+                feedback.push({text: "Can start with single-side focus", type: "success"});
+            } else {
+                feedback.push({text: "Requires both sides from start", type: "warning"});
+            }
+
+            return { score, maxScore, feedback, name: "Seeding Strategy" };
+        }
+
+        function assessCompetitiveDynamics(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+
+            if (answers.multi_homing_costs === 'high') {
+                score += 35;
+                feedback.push({text: "High multi-homing costs create lock-in", type: "success"});
+            } else if (answers.multi_homing_costs === 'moderate') {
+                score += 20;
+                feedback.push({text: "Moderate multi-homing costs", type: "warning"});
+            } else {
+                score += 5;
+                feedback.push({text: "Low multi-homing costs enable competition", type: "warning"});
+            }
+
+            if (answers.differentiation === 'yes') {
+                score += 35;
+                feedback.push({text: "Clear differentiation from competitors", type: "success"});
+            } else {
+                feedback.push({text: "Weak differentiation", type: "danger"});
+            }
+
+            if (answers.switching_costs === 'high') {
+                score += 30;
+                feedback.push({text: "High switching costs increase retention", type: "success"});
+            } else if (answers.switching_costs === 'moderate') {
+                score += 15;
+                feedback.push({text: "Moderate switching costs", type: "warning"});
+            } else {
+                feedback.push({text: "Low switching costs increase churn risk", type: "warning"});
+            }
+
+            return { score, maxScore, feedback, name: "Competitive Dynamics" };
+        }
+
+        function assessValueCreation(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+
+            if (answers.reduces_search_costs === 'yes') {
+                score += 35;
+                feedback.push({text: "Significantly reduces search costs", type: "success"});
+            } else {
+                feedback.push({text: "Limited search cost reduction", type: "warning"});
+            }
+
+            if (answers.reduces_transaction_costs === 'yes') {
+                score += 35;
+                feedback.push({text: "Significantly reduces transaction costs", type: "success"});
+            } else {
+                feedback.push({text: "Limited transaction cost reduction", type: "warning"});
+            }
+
+            if (answers.trust_mechanisms === 'yes') {
+                score += 30;
+                feedback.push({text: "Strong trust and safety mechanisms", type: "success"});
+            } else {
+                feedback.push({text: "Trust and safety needs attention", type: "danger"});
+            }
+
+            return { score, maxScore, feedback, name: "Value Creation" };
+        }
+
+        function assessPricingStrategy(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+
+            if (answers.revenue_model_clear === 'yes') {
+                score += 25;
+                feedback.push({text: "Clear revenue model", type: "success"});
+            } else {
+                feedback.push({text: "Revenue model needs clarification", type: "danger"});
+            }
+
+            if (answers.pricing_side_identified === 'yes') {
+                score += 25;
+                feedback.push({text: "Correct side identified for pricing", type: "success"});
+            } else {
+                feedback.push({text: "Unclear which side to charge", type: "danger"});
+            }
+
+            if (answers.pricing_structure && answers.pricing_structure !== 'undefined') {
+                score += 25;
+                feedback.push({text: `${answers.pricing_structure.charAt(0).toUpperCase() + answers.pricing_structure.slice(1)} model selected`, type: "success"});
+            } else {
+                feedback.push({text: "Pricing structure undefined", type: "danger"});
+            }
+
+            if (answers.pricing_sustainable === 'yes') {
+                score += 25;
+                feedback.push({text: "Pricing model appears sustainable", type: "success"});
+            } else {
+                feedback.push({text: "Sustainability concerns with pricing", type: "warning"});
+            }
+
+            return { score, maxScore, feedback, name: "Pricing Strategy" };
+        }
+
+        // Display Results
+        function displayResults(results, isQuickCheck = false) {
+            document.getElementById('quickCheckContainer').classList.remove('active');
+            document.getElementById('assessmentContainer').classList.remove('active');
+            document.getElementById('resultsContainer').classList.add('active');
+
+            // Overall Score
+            const scoreCircle = document.querySelector('.score-circle-progress');
+            const circumference = 2 * Math.PI * 85;
+            const offset = circumference - (results.score / 100) * circumference;
+
+            setTimeout(() => {
+                scoreCircle.style.strokeDashoffset = offset;
+            }, 100);
+
+            document.getElementById('scoreText').textContent = Math.round(results.score) + '%';
+            document.getElementById('scoreLabel').textContent = results.label;
+            document.getElementById('scoreDescription').textContent = results.description;
+
+            // Category Scores (only for full assessment)
+            const categoryContainer = document.getElementById('categoryScores');
+            categoryContainer.innerHTML = '';
+
+            if (!isQuickCheck && results.scores) {
+                Object.values(results.scores).forEach(category => {
+                    const percentage = (category.score / category.maxScore) * 100;
+                    const card = document.createElement('div');
+                    card.className = 'category-card';
+
+                    let fillColor = '#10b981'; // success
+                    if (percentage < 50) fillColor = '#ef4444'; // danger
+                    else if (percentage < 75) fillColor = '#f59e0b'; // warning
+
+                    card.innerHTML = `
+                        <div class="category-header">
+                            <span class="category-name">${category.name}</span>
+                            <span class="category-score">${category.score}/${category.maxScore}</span>
+                        </div>
+                        <div class="category-bar">
+                            <div class="category-fill" style="width: ${percentage}%; background: ${fillColor};"></div>
+                        </div>
+                        <ul class="feedback-list">
+                            ${category.feedback.map(f => `<li class="feedback-item ${f.type}">${f.text}</li>`).join('')}
+                        </ul>
+                    `;
+                    categoryContainer.appendChild(card);
+                });
+            }
+
+            // Recommendations
+            const recList = document.getElementById('recommendationsList');
+            recList.innerHTML = '';
+            results.recommendations.forEach((rec, index) => {
+                const li = document.createElement('li');
+                li.className = 'recommendation-item';
+                li.textContent = `${index + 1}. ${rec}`;
+                recList.appendChild(li);
+            });
+        }
+
+        // Navigation Functions
+        function backToModeSelection() {
+            document.getElementById('modeSelection').style.display = 'flex';
+            document.getElementById('quickCheckContainer').classList.remove('active');
+            document.getElementById('assessmentContainer').classList.remove('active');
+            document.getElementById('resultsContainer').classList.remove('active');
+            // Reset state
+            currentMode = null;
+            currentCategoryIndex = 0;
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            quickCheckAnswers = {};
+        }
+
+        // Download Report
+        function downloadReport() {
+            const reportData = {
+                timestamp: new Date().toISOString(),
+                mode: currentMode,
+                answers: currentMode === 'quickCheck' ? quickCheckAnswers : userAnswers,
+                score: document.getElementById('scoreText').textContent,
+                label: document.getElementById('scoreLabel').textContent,
+                description: document.getElementById('scoreDescription').textContent,
+                recommendations: Array.from(document.querySelectorAll('#recommendationsList li'))
+                    .map(li => li.textContent)
+            };
+
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `platform-assessment-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
