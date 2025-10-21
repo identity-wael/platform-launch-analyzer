@@ -608,23 +608,23 @@
             </div>
 
             <nav class="nav-menu">
-                <div class="nav-item active" onclick="showSection('home')">
+                <div class="nav-item active" onclick="showSection('home', this)">
                     <span class="nav-icon">🏠</span>
                     <span>Home</span>
                 </div>
-                <div class="nav-item" onclick="showSection('quick')">
+                <div class="nav-item" onclick="showSection('quick', this)">
                     <span class="nav-icon">⚡</span>
                     <span>Quick Check</span>
                 </div>
-                <div class="nav-item" onclick="showSection('full')">
+                <div class="nav-item" onclick="showSection('full', this)">
                     <span class="nav-icon">📊</span>
                     <span>Full Assessment</span>
                 </div>
-                <div class="nav-item" onclick="showSection('network')">
+                <div class="nav-item" onclick="showSection('network', this)">
                     <span class="nav-icon">🔗</span>
                     <span>Network Analysis</span>
                 </div>
-                <div class="nav-item" onclick="showSection('results')">
+                <div class="nav-item" onclick="showSection('results', this)">
                     <span class="nav-icon">📈</span>
                     <span>Results</span>
                 </div>
@@ -647,15 +647,15 @@
                 <div class="progress-title">Platform Stats</div>
                 <div style="display: flex; justify-content: space-between; margin-top: 12px;">
                     <div>
-                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-orange);">247</div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-orange);" id="totalAssessments">0</div>
                         <div style="font-size: 11px; color: var(--anthropic-mid-gray);">Assessments</div>
                     </div>
                     <div>
-                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-blue);">73%</div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-blue);" id="successRate">-</div>
                         <div style="font-size: 11px; color: var(--anthropic-mid-gray);">Success Rate</div>
                     </div>
                     <div>
-                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-green);">85.7</div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-green);" id="avgScore">-</div>
                         <div style="font-size: 11px; color: var(--anthropic-mid-gray);">Avg Score</div>
                     </div>
                 </div>
@@ -679,27 +679,8 @@
             <!-- Home Section -->
             <div id="homeSection" class="content-section">
                 <!-- Metrics Cards -->
-                <div class="cards-grid">
-                    <div class="metric-card">
-                        <div class="metric-label">Average Score</div>
-                        <div class="metric-value">85.7%</div>
-                        <div class="metric-change">↑ 12% from last month</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Success Rate</div>
-                        <div class="metric-value">73%</div>
-                        <div class="metric-change negative">↓ 2% from baseline</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Network Effects</div>
-                        <div class="metric-value">Strong</div>
-                        <div class="metric-change">Cross-side dominant</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Active Users</div>
-                        <div class="metric-value">1,247</div>
-                        <div class="metric-change">↑ 18% this week</div>
-                    </div>
+                <div class="cards-grid" id="metricsCards" style="display: none;">
+                    <!-- Will be populated with real data after assessments -->
                 </div>
 
                 <!-- Mode Selection -->
@@ -761,6 +742,34 @@
                 </div>
             </div>
 
+            <!-- Network Analysis Section -->
+            <div id="networkSection" class="content-section" style="display: none;">
+                <div class="network-container" style="height: 500px;">
+                    <div class="network-header">
+                        <div class="network-title">Platform Network Architecture</div>
+                        <button class="btn btn-secondary" onclick="resetNetwork()">Reset Visualization</button>
+                    </div>
+                    <div id="network-analysis-canvas" style="height: calc(100% - 50px);"></div>
+                </div>
+                <div class="cards-grid" style="margin-top: 20px;">
+                    <div class="metric-card">
+                        <div class="metric-label">Network Density</div>
+                        <div class="metric-value">68%</div>
+                        <div class="metric-change">Optimal for growth</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Cross-side Links</div>
+                        <div class="metric-value">142</div>
+                        <div class="metric-change">↑ Strong connections</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Platform Sides</div>
+                        <div class="metric-value">3</div>
+                        <div class="metric-change">Multi-sided platform</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Results Section -->
             <div id="resultsSection" class="content-section" style="display: none;">
                 <div class="results-container active">
@@ -791,7 +800,9 @@
         let currentSection = 'home';
         let assessmentMode = null;
         let currentQuestionIndex = 0;
+        let currentCategoryIndex = 0;
         let userAnswers = {};
+        let assessmentHistory = [];
 
         // Assessment Data
         const quickCheckQuestions = [
@@ -807,10 +818,67 @@
             "Do you know which side will pay?"
         ];
 
+        // Full Assessment Questions (from Python implementation)
+        const fullAssessment = {
+            coreDefinition: {
+                title: "Core Definition (Coring)",
+                questions: [
+                    { text: "Have you clearly defined all sides of your platform?", key: "sides_defined", options: ["yes", "no"] },
+                    { text: "Is the unit of value on your platform clearly defined?", key: "value_unit_clear", options: ["yes", "no"] },
+                    { text: "Have you designed the core interaction in detail?", key: "interaction_designed", options: ["yes", "no"] },
+                    { text: "Are governance rules and policies defined?", key: "governance_defined", options: ["yes", "no"] },
+                    { text: "Do you have a strategy to maintain control of the platform?", key: "control_mechanism", options: ["yes", "no"] }
+                ]
+            },
+            networkEffects: {
+                title: "Network Effects Potential",
+                questions: [
+                    { text: "Strength of same-side network effects?", key: "same_side_strength", options: ["strong", "moderate", "weak", "none"] },
+                    { text: "Strength of cross-side network effects?", key: "cross_side_strength", options: ["strong", "moderate", "weak", "none"] },
+                    { text: "Does the platform offer stand-alone value?", key: "standalone_value", options: ["yes", "no"] }
+                ]
+            },
+            seedingStrategy: {
+                title: "Seeding Strategy",
+                questions: [
+                    { text: "Do you have a strategy to attract marquee users?", key: "marquee_users", options: ["yes", "no"] },
+                    { text: "What is your subsidization strategy?", key: "subsidy_strategy", options: ["strategic", "minimal", "none"] },
+                    { text: "Do you have a clear solution to the chicken-egg problem?", key: "chicken_egg_solution", options: ["yes", "no"] },
+                    { text: "Can you start with single-side focus?", key: "single_side_start", options: ["yes", "no"] }
+                ]
+            },
+            competitiveDynamics: {
+                title: "Competitive Dynamics (Tipping)",
+                questions: [
+                    { text: "Multi-homing costs for users?", key: "multi_homing_costs", options: ["high", "moderate", "low"] },
+                    { text: "Clear differentiation from competitors?", key: "differentiation", options: ["yes", "no"] },
+                    { text: "Switching costs for users?", key: "switching_costs", options: ["high", "moderate", "low"] }
+                ]
+            },
+            valueCreation: {
+                title: "Value Creation",
+                questions: [
+                    { text: "Does platform significantly reduce search costs?", key: "reduces_search_costs", options: ["yes", "no"] },
+                    { text: "Does platform significantly reduce transaction costs?", key: "reduces_transaction_costs", options: ["yes", "no"] },
+                    { text: "Strong trust and safety mechanisms planned?", key: "trust_mechanisms", options: ["yes", "no"] }
+                ]
+            },
+            pricingStrategy: {
+                title: "Pricing Strategy",
+                questions: [
+                    { text: "Is the revenue model clearly defined?", key: "revenue_model_clear", options: ["yes", "no"] },
+                    { text: "Have you identified which side to charge?", key: "pricing_side_identified", options: ["yes", "no"] },
+                    { text: "What is your pricing structure?", key: "pricing_structure", options: ["rake", "subscription", "freemium", "ads", "undefined"] },
+                    { text: "Is the pricing model sustainable long-term?", key: "pricing_sustainable", options: ["yes", "no"] }
+                ]
+            }
+        };
+
         // Initialize
         window.addEventListener('load', () => {
             initNetworkVisualization();
             initTrendsChart();
+            updateStats(); // Load stats on page load
         });
 
         // Network Visualization with p5.js
@@ -959,17 +1027,35 @@
         }
 
         // Navigation
-        function showSection(section) {
+        function showSection(section, element) {
+            // Hide all sections
             document.querySelectorAll('.content-section').forEach(s => {
                 s.style.display = 'none';
             });
 
-            document.getElementById(section + 'Section').style.display = 'block';
+            // Show selected section
+            const sectionElement = document.getElementById(section + 'Section');
+            if (sectionElement) {
+                sectionElement.style.display = 'block';
+            }
 
+            // Update navigation active state
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
-            event.target.closest('.nav-item').classList.add('active');
+
+            // Add active class to clicked item or find by section name
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // Find nav item by section name
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    if (item.textContent.toLowerCase().includes(section.toLowerCase()) ||
+                        (section === 'home' && item.textContent.includes('Home'))) {
+                        item.classList.add('active');
+                    }
+                });
+            }
 
             currentSection = section;
 
@@ -981,7 +1067,7 @@
                 network: 'Network Analysis',
                 results: 'Assessment Results'
             };
-            document.getElementById('sectionTitle').textContent = titles[section];
+            document.getElementById('sectionTitle').textContent = titles[section] || 'Platform Assessment';
         }
 
         // Quick Check
@@ -1035,18 +1121,365 @@
             showSection('full');
             assessmentMode = 'full';
             currentQuestionIndex = 0;
+            currentCategoryIndex = 0;
             userAnswers = {};
+            updateProgress(0);
             showCurrentQuestion();
         }
 
         function showCurrentQuestion() {
-            // Implementation for full assessment questions
-            // This would cycle through comprehensive questions
+            const categories = Object.keys(fullAssessment);
+            const currentCategory = fullAssessment[categories[currentCategoryIndex]];
+            const currentQuestion = currentCategory.questions[currentQuestionIndex];
+
+            const container = document.getElementById('assessmentQuestions');
+            container.innerHTML = `
+                <div class="question-section">
+                    <h3 class="section-title">${currentCategory.title}</h3>
+                    <div class="question-group">
+                        <div class="question-label">Question ${getOverallQuestionNumber()} of ${getTotalQuestions()}</div>
+                        <div style="margin: 20px 0; font-size: 16px; font-weight: 500;">${currentQuestion.text}</div>
+                        <div class="answer-options">
+                            ${currentQuestion.options.map(option => `
+                                <button class="answer-option ${userAnswers[currentQuestion.key] === option ? 'selected' : ''}"
+                                        onclick="selectFullAnswer('${currentQuestion.key}', '${option}', this)">
+                                    ${option.charAt(0).toUpperCase() + option.slice(1)}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Update progress
+            const totalAnswered = Object.keys(userAnswers).length;
+            const total = getTotalQuestions();
+            updateProgress((totalAnswered / total) * 100);
         }
 
-        // Results Display
+        function getOverallQuestionNumber() {
+            let count = 1;
+            const categories = Object.keys(fullAssessment);
+            for (let i = 0; i < currentCategoryIndex; i++) {
+                count += fullAssessment[categories[i]].questions.length;
+            }
+            return count + currentQuestionIndex;
+        }
+
+        function getTotalQuestions() {
+            return Object.values(fullAssessment).reduce((sum, cat) => sum + cat.questions.length, 0);
+        }
+
+        function selectFullAnswer(key, value, element) {
+            userAnswers[key] = value;
+
+            // Update UI
+            document.querySelectorAll('.answer-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+
+            // Auto advance after short delay
+            setTimeout(() => {
+                nextQuestion();
+            }, 300);
+        }
+
+        function nextQuestion() {
+            const categories = Object.keys(fullAssessment);
+            const currentCategory = fullAssessment[categories[currentCategoryIndex]];
+
+            if (currentQuestionIndex < currentCategory.questions.length - 1) {
+                currentQuestionIndex++;
+            } else if (currentCategoryIndex < categories.length - 1) {
+                currentCategoryIndex++;
+                currentQuestionIndex = 0;
+            } else {
+                // Assessment complete
+                calculateFullResults();
+                return;
+            }
+
+            showCurrentQuestion();
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+            } else if (currentCategoryIndex > 0) {
+                currentCategoryIndex--;
+                const categories = Object.keys(fullAssessment);
+                const prevCategory = fullAssessment[categories[currentCategoryIndex]];
+                currentQuestionIndex = prevCategory.questions.length - 1;
+            }
+
+            showCurrentQuestion();
+        }
+
+        // Calculate Full Assessment Results
+        function calculateFullResults() {
+            const scores = {
+                coreDefinition: assessCoreDefinition(userAnswers),
+                networkEffects: assessNetworkEffects(userAnswers),
+                seedingStrategy: assessSeedingStrategy(userAnswers),
+                competitiveDynamics: assessCompetitiveDynamics(userAnswers),
+                valueCreation: assessValueCreation(userAnswers),
+                pricingStrategy: assessPricingStrategy(userAnswers)
+            };
+
+            const totalScore = Object.values(scores).reduce((sum, cat) => sum + cat.score, 0);
+            const maxScore = Object.values(scores).reduce((sum, cat) => sum + cat.maxScore, 0);
+            const percentage = (totalScore / maxScore) * 100;
+
+            displayFullResults(scores, percentage);
+        }
+
+        // Assessment Scoring Functions (from Python implementation)
+        function assessCoreDefinition(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+            const risks = [];
+
+            if (answers.sides_defined === 'yes') {
+                score += 20;
+                feedback.push({ text: "✓ Clear identification of platform sides", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Platform sides need clearer definition", type: "danger" });
+                risks.push("Unclear platform sides - fundamental issue");
+            }
+
+            if (answers.value_unit_clear === 'yes') {
+                score += 20;
+                feedback.push({ text: "✓ Value unit well-defined", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Value unit needs clarification", type: "danger" });
+            }
+
+            if (answers.interaction_designed === 'yes') {
+                score += 20;
+                feedback.push({ text: "✓ Core interaction properly designed", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Core interaction needs more work", type: "danger" });
+            }
+
+            if (answers.governance_defined === 'yes') {
+                score += 20;
+                feedback.push({ text: "✓ Governance rules established", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Governance structure needs development", type: "danger" });
+            }
+
+            if (answers.control_mechanism === 'yes') {
+                score += 20;
+                feedback.push({ text: "✓ Control mechanisms identified", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Need strategy for maintaining control", type: "danger" });
+                risks.push("Lack of platform control strategy");
+            }
+
+            return { score, maxScore, feedback, risks, name: "Core Definition (Coring)" };
+        }
+
+        function assessNetworkEffects(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+            const risks = [];
+
+            // Same-side network effects
+            if (answers.same_side_strength === 'strong') {
+                score += 30;
+                feedback.push({ text: "✓ Strong same-side network effects", type: "success" });
+            } else if (answers.same_side_strength === 'moderate') {
+                score += 15;
+                feedback.push({ text: "◐ Moderate same-side network effects", type: "warning" });
+            } else {
+                feedback.push({ text: "✗ Weak/no same-side network effects", type: "danger" });
+            }
+
+            // Cross-side network effects
+            if (answers.cross_side_strength === 'strong') {
+                score += 40;
+                feedback.push({ text: "✓ Strong cross-side network effects", type: "success" });
+            } else if (answers.cross_side_strength === 'moderate') {
+                score += 20;
+                feedback.push({ text: "◐ Moderate cross-side network effects", type: "warning" });
+            } else {
+                feedback.push({ text: "✗ Weak/no cross-side network effects", type: "danger" });
+                risks.push("Weak network effects may limit growth");
+            }
+
+            // Standalone value
+            if (answers.standalone_value === 'yes') {
+                score += 30;
+                feedback.push({ text: "✓ Platform offers stand-alone value", type: "success" });
+            } else {
+                feedback.push({ text: "⚠ Limited stand-alone value - harder to seed", type: "warning" });
+            }
+
+            return { score, maxScore, feedback, risks, name: "Network Effects Potential" };
+        }
+
+        function assessSeedingStrategy(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+            const risks = [];
+
+            if (answers.marquee_users === 'yes') {
+                score += 30;
+                feedback.push({ text: "✓ Marquee user strategy identified", type: "success" });
+            } else {
+                feedback.push({ text: "✗ No marquee user strategy", type: "danger" });
+            }
+
+            if (answers.subsidy_strategy === 'strategic') {
+                score += 20;
+                feedback.push({ text: "✓ Strategic subsidization planned", type: "success" });
+            } else if (answers.subsidy_strategy === 'minimal') {
+                score += 10;
+                feedback.push({ text: "◐ Limited subsidization planned", type: "warning" });
+            } else {
+                feedback.push({ text: "⚠ No clear subsidization strategy", type: "warning" });
+            }
+
+            if (answers.chicken_egg_solution === 'yes') {
+                score += 30;
+                feedback.push({ text: "✓ Clear solution to chicken-egg problem", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Chicken-egg problem not addressed", type: "danger" });
+                risks.push("No clear path to overcome chicken-egg problem");
+            }
+
+            if (answers.single_side_start === 'yes') {
+                score += 20;
+                feedback.push({ text: "✓ Can start with single-side focus", type: "success" });
+            } else {
+                feedback.push({ text: "⚠ Requires both sides from start", type: "warning" });
+            }
+
+            return { score, maxScore, feedback, risks, name: "Seeding Strategy" };
+        }
+
+        function assessCompetitiveDynamics(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+            const risks = [];
+
+            if (answers.multi_homing_costs === 'high') {
+                score += 35;
+                feedback.push({ text: "✓ High multi-homing costs create lock-in", type: "success" });
+            } else if (answers.multi_homing_costs === 'moderate') {
+                score += 20;
+                feedback.push({ text: "◐ Moderate multi-homing costs", type: "warning" });
+            } else {
+                score += 5;
+                feedback.push({ text: "⚠ Low multi-homing costs enable competition", type: "warning" });
+                risks.push("Low barriers to multi-platform usage");
+            }
+
+            if (answers.differentiation === 'yes') {
+                score += 35;
+                feedback.push({ text: "✓ Clear differentiation from competitors", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Weak differentiation", type: "danger" });
+                risks.push("Insufficient differentiation from competitors");
+            }
+
+            if (answers.switching_costs === 'high') {
+                score += 30;
+                feedback.push({ text: "✓ High switching costs increase retention", type: "success" });
+            } else if (answers.switching_costs === 'moderate') {
+                score += 15;
+                feedback.push({ text: "◐ Moderate switching costs", type: "warning" });
+            } else {
+                feedback.push({ text: "⚠ Low switching costs increase churn risk", type: "warning" });
+            }
+
+            return { score, maxScore, feedback, risks, name: "Competitive Dynamics (Tipping)" };
+        }
+
+        function assessValueCreation(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+            const risks = [];
+
+            if (answers.reduces_search_costs === 'yes') {
+                score += 35;
+                feedback.push({ text: "✓ Significantly reduces search costs", type: "success" });
+            } else {
+                feedback.push({ text: "◐ Limited search cost reduction", type: "warning" });
+            }
+
+            if (answers.reduces_transaction_costs === 'yes') {
+                score += 35;
+                feedback.push({ text: "✓ Significantly reduces transaction costs", type: "success" });
+            } else {
+                feedback.push({ text: "◐ Limited transaction cost reduction", type: "warning" });
+            }
+
+            if (answers.trust_mechanisms === 'yes') {
+                score += 30;
+                feedback.push({ text: "✓ Strong trust and safety mechanisms", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Trust and safety needs attention", type: "danger" });
+                risks.push("Insufficient trust and safety mechanisms");
+            }
+
+            return { score, maxScore, feedback, risks, name: "Value Creation" };
+        }
+
+        function assessPricingStrategy(answers) {
+            let score = 0;
+            const maxScore = 100;
+            const feedback = [];
+            const risks = [];
+
+            if (answers.revenue_model_clear === 'yes') {
+                score += 25;
+                feedback.push({ text: "✓ Clear revenue model", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Revenue model needs clarification", type: "danger" });
+                risks.push("Unclear path to monetization");
+            }
+
+            if (answers.pricing_side_identified === 'yes') {
+                score += 25;
+                feedback.push({ text: "✓ Correct side identified for pricing", type: "success" });
+            } else {
+                feedback.push({ text: "✗ Unclear which side to charge", type: "danger" });
+            }
+
+            if (answers.pricing_structure && answers.pricing_structure !== 'undefined') {
+                score += 25;
+                feedback.push({ text: `✓ ${answers.pricing_structure.charAt(0).toUpperCase() + answers.pricing_structure.slice(1)} model selected`, type: "success" });
+            } else {
+                feedback.push({ text: "✗ Pricing structure undefined", type: "danger" });
+            }
+
+            if (answers.pricing_sustainable === 'yes') {
+                score += 25;
+                feedback.push({ text: "✓ Pricing model appears sustainable", type: "success" });
+            } else {
+                feedback.push({ text: "⚠ Sustainability concerns with pricing", type: "warning" });
+            }
+
+            return { score, maxScore, feedback, risks, name: "Pricing Strategy" };
+        }
+
+        // Display Results (Quick Check)
         function displayResults(score) {
             showSection('results');
+
+            // Save to history
+            const assessment = {
+                type: 'quick',
+                score: score,
+                date: new Date().toISOString(),
+                answers: userAnswers
+            };
+            saveAssessment(assessment);
 
             // Animate score
             document.getElementById('scoreValue').textContent = Math.round(score) + '%';
@@ -1055,22 +1488,101 @@
             let label = '';
             let description = '';
 
-            if (score >= 75) {
-                label = 'Strong Viability';
-                description = 'Your platform shows excellent potential. Proceed with confidence.';
-            } else if (score >= 60) {
-                label = 'Moderate Viability';
-                description = 'Address key weaknesses before launching.';
+            if (score >= 70) {
+                label = 'Strong Potential';
+                description = 'Your platform idea shows promise. Consider a full assessment for detailed insights.';
+            } else if (score >= 50) {
+                label = 'Moderate Potential';
+                description = 'Some concerns identified. Full assessment recommended to identify specific areas for improvement.';
             } else {
-                label = 'Weak Viability';
-                description = 'Consider reconsidering the platform approach.';
+                label = 'Significant Concerns';
+                description = 'Multiple red flags detected. Consider whether a platform model is appropriate.';
             }
 
             document.getElementById('scoreLabel').textContent = label;
             document.getElementById('scoreDescription').textContent = description;
 
+            // Clear categories for quick check
+            document.getElementById('categoriesGrid').innerHTML = '';
+
             // Draw score circle
             drawScoreCircle(score);
+            updateStats();
+        }
+
+        // Display Full Results
+        function displayFullResults(scores, percentage) {
+            showSection('results');
+
+            // Save to history
+            const assessment = {
+                type: 'full',
+                score: percentage,
+                categoryScores: scores,
+                date: new Date().toISOString(),
+                answers: userAnswers
+            };
+            saveAssessment(assessment);
+
+            // Animate overall score
+            document.getElementById('scoreValue').textContent = Math.round(percentage) + '%';
+
+            // Set label based on score
+            let label = '';
+            let description = '';
+            const recommendations = [];
+
+            if (percentage >= 75) {
+                label = 'Strong Viability';
+                description = 'Platform shows excellent potential across key dimensions';
+                recommendations.push("Proceed with detailed business plan development");
+                recommendations.push("Begin prototype/MVP development");
+                recommendations.push("Identify and approach marquee users");
+            } else if (percentage >= 60) {
+                label = 'Moderate Viability';
+                description = 'Platform has potential but needs work in key areas';
+                recommendations.push("Address weak areas before launch");
+                recommendations.push("Strengthen network effects design");
+                recommendations.push("Develop clearer monetization strategy");
+            } else {
+                label = 'Weak Viability';
+                description = 'Fundamental issues suggest reconsidering platform approach';
+                recommendations.push("Reconsider platform approach vs. traditional business model");
+                recommendations.push("If proceeding, fundamental redesign recommended");
+                recommendations.push("Consider pivoting to address stronger pain points");
+            }
+
+            document.getElementById('scoreLabel').textContent = label;
+            document.getElementById('scoreDescription').textContent = description;
+
+            // Display category breakdowns
+            const categoriesGrid = document.getElementById('categoriesGrid');
+            categoriesGrid.innerHTML = '';
+
+            Object.values(scores).forEach(category => {
+                const percentage = (category.score / category.maxScore) * 100;
+                const card = document.createElement('div');
+                card.className = 'category-card';
+
+                card.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-name">${category.name}</div>
+                        <div class="category-score">${category.score}/${category.maxScore}</div>
+                    </div>
+                    <div class="category-bar">
+                        <div class="category-fill" style="width: ${percentage}%; background: linear-gradient(90deg, var(--anthropic-orange), var(--anthropic-blue));"></div>
+                    </div>
+                    <div class="category-feedback">
+                        ${category.feedback.map(f => f.text).join('<br>')}
+                    </div>
+                `;
+
+                categoriesGrid.appendChild(card);
+            });
+
+            // Draw score circle
+            drawScoreCircle(percentage);
+            updateStats();
         }
 
         function drawScoreCircle(score) {
@@ -1114,15 +1626,106 @@
         }
 
         // Helper Functions
+        function saveAssessment(assessment) {
+            // Get existing history from localStorage
+            let history = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
+            history.unshift(assessment); // Add new assessment to beginning
+
+            // Keep only last 50 assessments
+            if (history.length > 50) {
+                history = history.slice(0, 50);
+            }
+
+            localStorage.setItem('assessmentHistory', JSON.stringify(history));
+            assessmentHistory = history;
+        }
+
+        function updateStats() {
+            const history = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
+
+            // Total assessments
+            document.getElementById('totalAssessments').textContent = history.length;
+
+            if (history.length > 0) {
+                // Success rate (scores >= 75%)
+                const successful = history.filter(a => a.score >= 75).length;
+                const successRate = (successful / history.length) * 100;
+                document.getElementById('successRate').textContent = Math.round(successRate) + '%';
+
+                // Average score
+                const avgScore = history.reduce((sum, a) => sum + a.score, 0) / history.length;
+                document.getElementById('avgScore').textContent = Math.round(avgScore);
+
+                // Show metrics cards if we have data
+                const metricsCards = document.getElementById('metricsCards');
+                if (history.length >= 3) {
+                    metricsCards.style.display = 'grid';
+                    metricsCards.innerHTML = `
+                        <div class="metric-card">
+                            <div class="metric-label">Latest Score</div>
+                            <div class="metric-value">${Math.round(history[0].score)}%</div>
+                            <div class="metric-change ${history[0].score >= 75 ? '' : 'negative'}">
+                                ${history[0].type === 'full' ? 'Full Assessment' : 'Quick Check'}
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Success Rate</div>
+                            <div class="metric-value">${Math.round(successRate)}%</div>
+                            <div class="metric-change">≥75% score threshold</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Average Score</div>
+                            <div class="metric-value">${Math.round(avgScore)}%</div>
+                            <div class="metric-change">All assessments</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Total Assessments</div>
+                            <div class="metric-value">${history.length}</div>
+                            <div class="metric-change">Since first use</div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
         function exportData() {
-            console.log('Exporting data...');
+            const history = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
+
+            if (history.length === 0) {
+                alert('No assessment data to export');
+                return;
+            }
+
+            // Create export data
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                totalAssessments: history.length,
+                assessments: history
+            };
+
+            // Create and download JSON file
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `platform-assessments-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function startNewAssessment() {
+            // Reset state
             userAnswers = {};
             currentQuestionIndex = 0;
             updateProgress(0);
+
+            // Show home section with mode selection
             showSection('home');
+
+            // Scroll to mode cards
+            setTimeout(() => {
+                document.querySelector('.mode-cards').scrollIntoView({ behavior: 'smooth' });
+            }, 100);
         }
 
         function openHelp() {
