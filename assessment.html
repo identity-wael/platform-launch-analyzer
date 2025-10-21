@@ -572,6 +572,75 @@
             font-weight: 500;
         }
 
+        /* History Items */
+        .history-item {
+            background: var(--anthropic-light);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--anthropic-light-gray);
+        }
+
+        .history-item:hover {
+            background: white;
+            transform: translateX(4px);
+            border-color: var(--anthropic-orange);
+        }
+
+        .history-date {
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            margin-bottom: 4px;
+        }
+
+        .history-score {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 4px;
+        }
+
+        .history-type {
+            font-size: 14px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Answer Review */
+        .answer-group {
+            background: var(--anthropic-light);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .answer-question {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .answer-value {
+            font-size: 14px;
+            color: var(--anthropic-blue);
+            padding: 4px 12px;
+            background: white;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .answer-value.editable {
+            cursor: pointer;
+            border: 1px solid var(--anthropic-light-gray);
+        }
+
+        .answer-value.editable:hover {
+            border-color: var(--anthropic-orange);
+            background: var(--anthropic-light);
+        }
+
         /* Floating Action Button */
         .fab {
             position: fixed;
@@ -772,7 +841,8 @@
 
             <!-- Results Section -->
             <div id="resultsSection" class="content-section" style="display: none;">
-                <div class="results-container active">
+                <!-- Current Result -->
+                <div class="results-container active" id="currentResult">
                     <div class="score-display">
                         <div class="score-circle">
                             <canvas id="scoreCanvas" width="180" height="180"></canvas>
@@ -782,10 +852,37 @@
                         <div class="score-description" id="scoreDescription">Processing your assessment...</div>
                     </div>
 
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 12px; justify-content: center; margin: 24px 0;">
+                        <button class="btn btn-secondary" onclick="reviewAnswers()">Review Answers</button>
+                        <button class="btn btn-primary" onclick="editAssessment()">Edit Assessment</button>
+                        <button class="btn btn-secondary" onclick="showHistory()">View History</button>
+                    </div>
+
                     <div class="categories-grid" id="categoriesGrid"></div>
 
                     <div class="chart-container">
                         <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Answer Review Section -->
+                <div class="assessment-container" id="answerReview" style="display: none;">
+                    <h3 class="section-title">Your Answers</h3>
+                    <div id="answersDisplay"></div>
+                    <div style="margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="backToResults()">Back to Results</button>
+                        <button class="btn btn-primary" onclick="editAssessment()">Edit Answers</button>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div class="assessment-container" id="historyView" style="display: none;">
+                    <h3 class="section-title">Assessment History</h3>
+                    <div id="historyList"></div>
+                    <div style="margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="backToResults()">Back to Current Result</button>
+                        <button class="btn btn-secondary" onclick="clearHistory()">Clear History</button>
                     </div>
                 </div>
             </div>
@@ -1582,7 +1679,80 @@
 
             // Draw score circle
             drawScoreCircle(percentage);
+
+            // Draw radar chart for full assessment
+            drawRadarChart(scores);
+
             updateStats();
+        }
+
+        // Radar Chart for Full Assessment
+        function drawRadarChart(scores) {
+            const canvas = document.getElementById('radarChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (window.radarChartInstance) {
+                window.radarChartInstance.destroy();
+            }
+
+            const labels = Object.values(scores).map(s => {
+                // Shorten labels for better display
+                return s.name.replace(' (Coring)', '').replace(' (Tipping)', '');
+            });
+
+            const data = Object.values(scores).map(s => (s.score / s.maxScore) * 100);
+
+            window.radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Your Assessment',
+                        data: data,
+                        borderColor: '#d97757',
+                        backgroundColor: 'rgba(217, 119, 87, 0.2)',
+                        pointBackgroundColor: '#d97757',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#d97757'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: '#e8e6dc'
+                            },
+                            grid: {
+                                color: '#e8e6dc'
+                            },
+                            pointLabels: {
+                                color: '#141413',
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            ticks: {
+                                color: '#b0aea5',
+                                backdropColor: 'transparent',
+                                min: 0,
+                                max: 100,
+                                stepSize: 25
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
         }
 
         function drawScoreCircle(score) {
@@ -1738,6 +1908,154 @@
 
         function showNetworkViz() {
             showSection('network');
+        }
+
+        // Review and Edit Functions
+        function reviewAnswers() {
+            const review = document.getElementById('answerReview');
+            const currentResult = document.getElementById('currentResult');
+            const display = document.getElementById('answersDisplay');
+
+            // Hide current result, show review
+            currentResult.style.display = 'none';
+            review.style.display = 'block';
+
+            // Build answers display
+            display.innerHTML = '';
+
+            if (assessmentMode === 'quick') {
+                // Quick Check answers
+                quickCheckQuestions.forEach((question, index) => {
+                    const answer = userAnswers[`quick_${index}`] || 'Not answered';
+                    const div = document.createElement('div');
+                    div.className = 'answer-group';
+                    div.innerHTML = `
+                        <div class="answer-question">${index + 1}. ${question}</div>
+                        <div class="answer-value">${answer.toUpperCase()}</div>
+                    `;
+                    display.appendChild(div);
+                });
+            } else {
+                // Full Assessment answers
+                Object.entries(fullAssessment).forEach(([categoryKey, category]) => {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.innerHTML = `<h4 style="margin: 20px 0 12px; color: var(--anthropic-orange);">${category.title}</h4>`;
+                    display.appendChild(categoryDiv);
+
+                    category.questions.forEach(question => {
+                        const answer = userAnswers[question.key] || 'Not answered';
+                        const div = document.createElement('div');
+                        div.className = 'answer-group';
+                        div.innerHTML = `
+                            <div class="answer-question">${question.text}</div>
+                            <div class="answer-value">${answer.charAt(0).toUpperCase() + answer.slice(1)}</div>
+                        `;
+                        display.appendChild(div);
+                    });
+                });
+            }
+        }
+
+        function editAssessment() {
+            // Go back to the assessment with current answers
+            if (assessmentMode === 'quick') {
+                startQuickCheck();
+                // Re-populate answers
+                Object.entries(userAnswers).forEach(([key, value]) => {
+                    if (key.startsWith('quick_')) {
+                        const index = parseInt(key.split('_')[1]);
+                        const buttons = document.querySelectorAll(`#quickQuestions .question-group:nth-child(${index + 1}) .answer-option`);
+                        buttons.forEach(btn => {
+                            if (btn.textContent.toLowerCase() === value) {
+                                btn.classList.add('selected');
+                            }
+                        });
+                    }
+                });
+            } else if (assessmentMode === 'full') {
+                startFullAssessment();
+                // Answers are preserved in userAnswers global variable
+            }
+        }
+
+        function showHistory() {
+            const historyView = document.getElementById('historyView');
+            const currentResult = document.getElementById('currentResult');
+            const historyList = document.getElementById('historyList');
+
+            // Hide current result, show history
+            currentResult.style.display = 'none';
+            historyView.style.display = 'block';
+
+            // Load and display history
+            const history = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
+            historyList.innerHTML = '';
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<p style="color: var(--anthropic-mid-gray);">No assessment history found.</p>';
+            } else {
+                history.forEach((assessment, index) => {
+                    const date = new Date(assessment.date);
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.onclick = () => loadHistoricalResult(index);
+
+                    const scoreColor = assessment.score >= 75 ? 'var(--anthropic-green)' :
+                                      assessment.score >= 60 ? 'var(--anthropic-orange)' :
+                                      'var(--anthropic-orange)';
+
+                    div.innerHTML = `
+                        <div class="history-date">${date.toLocaleDateString()} ${date.toLocaleTimeString()}</div>
+                        <div class="history-score" style="color: ${scoreColor}">${Math.round(assessment.score)}%</div>
+                        <div class="history-type">${assessment.type === 'full' ? 'Full Assessment' : 'Quick Check'}</div>
+                        ${index === 0 ? '<div style="color: var(--anthropic-blue); font-size: 12px; margin-top: 4px;">Current</div>' : ''}
+                    `;
+                    historyList.appendChild(div);
+                });
+            }
+        }
+
+        function loadHistoricalResult(index) {
+            const history = JSON.parse(localStorage.getItem('assessmentHistory') || '[]');
+            const assessment = history[index];
+
+            if (assessment) {
+                // Load the historical answers
+                userAnswers = assessment.answers || {};
+                assessmentMode = assessment.type;
+
+                // Display the results
+                if (assessment.type === 'quick') {
+                    displayResults(assessment.score);
+                } else {
+                    // For full assessment, recalculate to get category scores
+                    if (assessment.categoryScores) {
+                        displayFullResults(assessment.categoryScores, assessment.score);
+                    } else {
+                        // Recalculate if category scores not saved
+                        calculateFullResults();
+                    }
+                }
+
+                // Show results section
+                document.getElementById('historyView').style.display = 'none';
+                document.getElementById('currentResult').style.display = 'block';
+            }
+        }
+
+        function backToResults() {
+            document.getElementById('answerReview').style.display = 'none';
+            document.getElementById('historyView').style.display = 'none';
+            document.getElementById('currentResult').style.display = 'block';
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all assessment history?')) {
+                localStorage.removeItem('assessmentHistory');
+                assessmentHistory = [];
+                updateStats();
+                showHistory(); // Refresh the view
+            }
         }
     </script>
 </body>
