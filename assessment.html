@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Launch Assessment - Neurascale</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Anthropic Brand Colors */
+        :root {
+            --anthropic-dark: #141413;
+            --anthropic-light: #faf9f5;
+            --anthropic-mid-gray: #b0aea5;
+            --anthropic-light-gray: #e8e6dc;
+            --anthropic-orange: #d97757;
+            --anthropic-blue: #6a9bcc;
+            --anthropic-green: #788c5d;
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+            min-height: 100vh;
+            color: var(--anthropic-dark);
+            line-height: 1.6;
+        }
+
+        /* Container */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 32px 24px;
+            border-right: 1px solid var(--anthropic-light-gray);
+            overflow-y: auto;
+            transition: var(--transition);
+        }
+
+        .logo {
+            margin-bottom: 40px;
+        }
+
+        .logo h1 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 4px;
+        }
+
+        .logo .subtitle {
+            color: var(--anthropic-mid-gray);
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation */
+        .nav-menu {
+            margin-bottom: 32px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--anthropic-dark);
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--anthropic-light);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(217, 119, 87, 0.1), rgba(106, 155, 204, 0.1));
+            border-color: var(--anthropic-orange);
+            color: var(--anthropic-orange);
+        }
+
+        .nav-icon {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Assessment Progress */
+        .assessment-progress {
+            background: var(--anthropic-light);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .progress-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--anthropic-mid-gray);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--anthropic-light-gray);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--anthropic-orange), var(--anthropic-blue));
+            border-radius: 2px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        /* Header */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .header-title h2 {
+            font-family: 'Lora', serif;
+            font-size: 32px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 4px;
+        }
+
+        .header-subtitle {
+            color: var(--anthropic-mid-gray);
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--anthropic-orange);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #c86641;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--anthropic-dark);
+            border: 1px solid var(--anthropic-light-gray);
+        }
+
+        .btn-secondary:hover {
+            background: var(--anthropic-light);
+            border-color: var(--anthropic-mid-gray);
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(20, 20, 19, 0.08);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--anthropic-orange), var(--anthropic-blue));
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(20, 20, 19, 0.12);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--anthropic-mid-gray);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 4px;
+        }
+
+        .metric-change {
+            font-size: 13px;
+            color: var(--anthropic-green);
+        }
+
+        .metric-change.negative {
+            color: var(--anthropic-orange);
+        }
+
+        /* Assessment Form */
+        .assessment-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(20, 20, 19, 0.08);
+            margin-bottom: 32px;
+        }
+
+        .question-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--anthropic-light-gray);
+        }
+
+        .question-group {
+            margin-bottom: 24px;
+        }
+
+        .question-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 12px;
+        }
+
+        .answer-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .answer-option {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--anthropic-light-gray);
+            background: white;
+            color: var(--anthropic-dark);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .answer-option:hover {
+            background: var(--anthropic-light);
+            border-color: var(--anthropic-mid-gray);
+        }
+
+        .answer-option.selected {
+            background: var(--anthropic-orange);
+            color: white;
+            border-color: var(--anthropic-orange);
+        }
+
+        /* Network Visualization */
+        .network-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(20, 20, 19, 0.08);
+            height: 400px;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .network-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .network-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+        }
+
+        #network-canvas {
+            width: 100%;
+            height: calc(100% - 40px);
+            border-radius: 8px;
+            background: var(--anthropic-light);
+        }
+
+        /* Results Section */
+        .results-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(20, 20, 19, 0.08);
+            display: none;
+        }
+
+        .results-container.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .score-display {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+        }
+
+        .score-label {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .score-description {
+            font-size: 14px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Category Breakdown */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .category-card {
+            background: var(--anthropic-light);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--anthropic-light-gray);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .category-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+        }
+
+        .category-score {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--anthropic-orange);
+        }
+
+        .category-bar {
+            height: 4px;
+            background: white;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .category-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--anthropic-orange), var(--anthropic-blue));
+            border-radius: 2px;
+            transition: width 1s ease;
+        }
+
+        .category-feedback {
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            line-height: 1.5;
+        }
+
+        /* Charts */
+        .chart-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(20, 20, 19, 0.08);
+            height: 300px;
+            margin-bottom: 32px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--anthropic-light-gray);
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--anthropic-light-gray);
+            border-top-color: var(--anthropic-orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mode Selection Cards */
+        .mode-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .mode-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(20, 20, 19, 0.08);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            border: 2px solid transparent;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(20, 20, 19, 0.12);
+            border-color: var(--anthropic-orange);
+        }
+
+        .mode-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .mode-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .mode-description {
+            font-size: 14px;
+            color: var(--anthropic-mid-gray);
+            margin-bottom: 12px;
+        }
+
+        .mode-time {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--anthropic-light);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--anthropic-orange);
+            font-weight: 500;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--anthropic-orange);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(217, 119, 87, 0.4);
+            transition: var(--transition);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 8px 20px rgba(217, 119, 87, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>Platform Analyzer</h1>
+                <div class="subtitle">NEURASCALE ASSESSMENT TOOL</div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="showSection('home')">
+                    <span class="nav-icon">🏠</span>
+                    <span>Home</span>
+                </div>
+                <div class="nav-item" onclick="showSection('quick')">
+                    <span class="nav-icon">⚡</span>
+                    <span>Quick Check</span>
+                </div>
+                <div class="nav-item" onclick="showSection('full')">
+                    <span class="nav-icon">📊</span>
+                    <span>Full Assessment</span>
+                </div>
+                <div class="nav-item" onclick="showSection('network')">
+                    <span class="nav-icon">🔗</span>
+                    <span>Network Analysis</span>
+                </div>
+                <div class="nav-item" onclick="showSection('results')">
+                    <span class="nav-icon">📈</span>
+                    <span>Results</span>
+                </div>
+            </nav>
+
+            <!-- Assessment Progress -->
+            <div class="assessment-progress">
+                <div class="progress-title">Assessment Progress</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-stats">
+                    <span id="progressText">Not Started</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="assessment-progress">
+                <div class="progress-title">Platform Stats</div>
+                <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                    <div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-orange);">247</div>
+                        <div style="font-size: 11px; color: var(--anthropic-mid-gray);">Assessments</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-blue);">73%</div>
+                        <div style="font-size: 11px; color: var(--anthropic-mid-gray);">Success Rate</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--anthropic-green);">85.7</div>
+                        <div style="font-size: 11px; color: var(--anthropic-mid-gray);">Avg Score</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="content-header">
+                <div class="header-title">
+                    <h2 id="sectionTitle">Platform Assessment</h2>
+                    <div class="header-subtitle">Evaluate your platform strategy with data-driven insights</div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="exportData()">Export</button>
+                    <button class="btn btn-primary" onclick="startNewAssessment()">New Assessment</button>
+                </div>
+            </div>
+
+            <!-- Home Section -->
+            <div id="homeSection" class="content-section">
+                <!-- Metrics Cards -->
+                <div class="cards-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Average Score</div>
+                        <div class="metric-value">85.7%</div>
+                        <div class="metric-change">↑ 12% from last month</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value">73%</div>
+                        <div class="metric-change negative">↓ 2% from baseline</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Network Effects</div>
+                        <div class="metric-value">Strong</div>
+                        <div class="metric-change">Cross-side dominant</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Active Users</div>
+                        <div class="metric-value">1,247</div>
+                        <div class="metric-change">↑ 18% this week</div>
+                    </div>
+                </div>
+
+                <!-- Mode Selection -->
+                <div class="mode-cards">
+                    <div class="mode-card" onclick="startQuickCheck()">
+                        <div class="mode-icon">⚡</div>
+                        <div class="mode-title">Quick Check</div>
+                        <div class="mode-description">Rapid assessment with 10 key questions to identify red flags</div>
+                        <div class="mode-time">5 minutes</div>
+                    </div>
+                    <div class="mode-card" onclick="startFullAssessment()">
+                        <div class="mode-icon">📊</div>
+                        <div class="mode-title">Full Assessment</div>
+                        <div class="mode-description">Comprehensive evaluation across all platform dimensions</div>
+                        <div class="mode-time">15 minutes</div>
+                    </div>
+                    <div class="mode-card" onclick="showNetworkViz()">
+                        <div class="mode-icon">🔗</div>
+                        <div class="mode-title">Network Analysis</div>
+                        <div class="mode-description">Visualize and analyze platform network architecture</div>
+                        <div class="mode-time">Interactive</div>
+                    </div>
+                </div>
+
+                <!-- Network Visualization -->
+                <div class="network-container">
+                    <div class="network-header">
+                        <div class="network-title">Platform Network Dynamics</div>
+                        <button class="btn btn-secondary" onclick="resetNetwork()">Reset</button>
+                    </div>
+                    <div id="network-canvas"></div>
+                </div>
+
+                <!-- Chart -->
+                <div class="chart-container">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Quick Check Section -->
+            <div id="quickSection" class="content-section" style="display: none;">
+                <div class="assessment-container">
+                    <h3 class="section-title">Quick Platform Check</h3>
+                    <div id="quickQuestions"></div>
+                    <div style="margin-top: 24px;">
+                        <button class="btn btn-primary" onclick="submitQuickCheck()">Get Results</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Assessment Section -->
+            <div id="fullSection" class="content-section" style="display: none;">
+                <div class="assessment-container">
+                    <div id="assessmentQuestions"></div>
+                    <div style="margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="previousQuestion()">Previous</button>
+                        <button class="btn btn-primary" onclick="nextQuestion()">Next</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="content-section" style="display: none;">
+                <div class="results-container active">
+                    <div class="score-display">
+                        <div class="score-circle">
+                            <canvas id="scoreCanvas" width="180" height="180"></canvas>
+                            <div class="score-value" id="scoreValue">0%</div>
+                        </div>
+                        <div class="score-label" id="scoreLabel">Calculating...</div>
+                        <div class="score-description" id="scoreDescription">Processing your assessment...</div>
+                    </div>
+
+                    <div class="categories-grid" id="categoriesGrid"></div>
+
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="openHelp()">?</button>
+
+    <script>
+        // Global Variables
+        let currentSection = 'home';
+        let assessmentMode = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+
+        // Assessment Data
+        const quickCheckQuestions = [
+            "Can you clearly identify all platform sides?",
+            "Is there a real search or transaction cost problem?",
+            "Do you have a clear value exchange between sides?",
+            "Can you explain your platform in one sentence?",
+            "Will network effects kick in at reasonable scale?",
+            "Do you have a solution to the chicken-egg problem?",
+            "Is there clear differentiation from existing solutions?",
+            "Can you start without massive subsidies?",
+            "Does the platform offer stand-alone value?",
+            "Do you know which side will pay?"
+        ];
+
+        // Initialize
+        window.addEventListener('load', () => {
+            initNetworkVisualization();
+            initTrendsChart();
+        });
+
+        // Network Visualization with p5.js
+        function initNetworkVisualization() {
+            new p5((sketch) => {
+                let nodes = [];
+                let connections = [];
+                let centerNode;
+
+                sketch.setup = function() {
+                    const canvas = sketch.createCanvas(
+                        document.getElementById('network-canvas').offsetWidth,
+                        300
+                    );
+                    canvas.parent('network-canvas');
+
+                    // Create center node
+                    centerNode = {
+                        x: sketch.width / 2,
+                        y: sketch.height / 2,
+                        r: 40,
+                        color: '#d97757'
+                    };
+
+                    // Create side nodes
+                    for (let i = 0; i < 6; i++) {
+                        let angle = (i / 6) * sketch.TWO_PI;
+                        nodes.push({
+                            x: centerNode.x + sketch.cos(angle) * 100,
+                            y: centerNode.y + sketch.sin(angle) * 100,
+                            r: 20,
+                            color: i < 3 ? '#6a9bcc' : '#788c5d',
+                            vx: 0,
+                            vy: 0
+                        });
+                    }
+
+                    // Create connections
+                    nodes.forEach((node, i) => {
+                        connections.push({
+                            from: centerNode,
+                            to: node,
+                            strength: sketch.random(0.3, 1)
+                        });
+                    });
+                };
+
+                sketch.draw = function() {
+                    sketch.background('#faf9f5');
+
+                    // Draw connections
+                    connections.forEach(conn => {
+                        sketch.strokeWeight(conn.strength * 2);
+                        sketch.stroke(217, 119, 87, 100);
+                        sketch.line(conn.from.x, conn.from.y, conn.to.x, conn.to.y);
+                    });
+
+                    // Draw center node
+                    sketch.noStroke();
+                    sketch.fill(centerNode.color);
+                    sketch.ellipse(centerNode.x, centerNode.y, centerNode.r * 2);
+                    sketch.fill(255);
+                    sketch.textAlign(sketch.CENTER, sketch.CENTER);
+                    sketch.textSize(10);
+                    sketch.text('CORE', centerNode.x, centerNode.y);
+
+                    // Draw side nodes
+                    nodes.forEach((node, i) => {
+                        // Apply physics
+                        let dx = centerNode.x - node.x;
+                        let dy = centerNode.y - node.y;
+                        let distance = sketch.dist(node.x, node.y, centerNode.x, centerNode.y);
+
+                        if (distance > 120) {
+                            node.vx += dx * 0.001;
+                            node.vy += dy * 0.001;
+                        } else if (distance < 80) {
+                            node.vx -= dx * 0.001;
+                            node.vy -= dy * 0.001;
+                        }
+
+                        node.vx *= 0.95;
+                        node.vy *= 0.95;
+                        node.x += node.vx;
+                        node.y += node.vy;
+
+                        sketch.noStroke();
+                        sketch.fill(node.color);
+                        sketch.ellipse(node.x, node.y, node.r * 2);
+                    });
+                };
+
+                sketch.windowResized = function() {
+                    sketch.resizeCanvas(
+                        document.getElementById('network-canvas').offsetWidth,
+                        300
+                    );
+                };
+            });
+        }
+
+        // Trends Chart
+        function initTrendsChart() {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Platform Viability Score',
+                        data: [65, 68, 72, 78, 82, 85.7],
+                        borderColor: '#d97757',
+                        backgroundColor: 'rgba(217, 119, 87, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Network Effects',
+                        data: [60, 65, 70, 73, 75, 78],
+                        borderColor: '#6a9bcc',
+                        backgroundColor: 'rgba(106, 155, 204, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Platform Performance Trends'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Navigation
+        function showSection(section) {
+            document.querySelectorAll('.content-section').forEach(s => {
+                s.style.display = 'none';
+            });
+
+            document.getElementById(section + 'Section').style.display = 'block';
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.nav-item').classList.add('active');
+
+            currentSection = section;
+
+            // Update title
+            const titles = {
+                home: 'Platform Assessment',
+                quick: 'Quick Check',
+                full: 'Full Assessment',
+                network: 'Network Analysis',
+                results: 'Assessment Results'
+            };
+            document.getElementById('sectionTitle').textContent = titles[section];
+        }
+
+        // Quick Check
+        function startQuickCheck() {
+            showSection('quick');
+            renderQuickCheck();
+            assessmentMode = 'quick';
+            updateProgress(0);
+        }
+
+        function renderQuickCheck() {
+            const container = document.getElementById('quickQuestions');
+            container.innerHTML = '';
+
+            quickCheckQuestions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-group';
+                questionDiv.innerHTML = `
+                    <div class="question-label">${index + 1}. ${question}</div>
+                    <div class="answer-options">
+                        <button class="answer-option" onclick="selectQuickAnswer(${index}, 'yes')">Yes</button>
+                        <button class="answer-option" onclick="selectQuickAnswer(${index}, 'no')">No</button>
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function selectQuickAnswer(index, answer) {
+            userAnswers[`quick_${index}`] = answer;
+
+            // Update UI
+            const options = event.target.parentElement.querySelectorAll('.answer-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            event.target.classList.add('selected');
+
+            // Update progress
+            const answered = Object.keys(userAnswers).length;
+            const total = quickCheckQuestions.length;
+            updateProgress((answered / total) * 100);
+        }
+
+        function submitQuickCheck() {
+            const yesCount = Object.values(userAnswers).filter(a => a === 'yes').length;
+            const score = (yesCount / quickCheckQuestions.length) * 100;
+            displayResults(score);
+        }
+
+        // Full Assessment
+        function startFullAssessment() {
+            showSection('full');
+            assessmentMode = 'full';
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            showCurrentQuestion();
+        }
+
+        function showCurrentQuestion() {
+            // Implementation for full assessment questions
+            // This would cycle through comprehensive questions
+        }
+
+        // Results Display
+        function displayResults(score) {
+            showSection('results');
+
+            // Animate score
+            document.getElementById('scoreValue').textContent = Math.round(score) + '%';
+
+            // Set label based on score
+            let label = '';
+            let description = '';
+
+            if (score >= 75) {
+                label = 'Strong Viability';
+                description = 'Your platform shows excellent potential. Proceed with confidence.';
+            } else if (score >= 60) {
+                label = 'Moderate Viability';
+                description = 'Address key weaknesses before launching.';
+            } else {
+                label = 'Weak Viability';
+                description = 'Consider reconsidering the platform approach.';
+            }
+
+            document.getElementById('scoreLabel').textContent = label;
+            document.getElementById('scoreDescription').textContent = description;
+
+            // Draw score circle
+            drawScoreCircle(score);
+        }
+
+        function drawScoreCircle(score) {
+            const canvas = document.getElementById('scoreCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 70;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Background circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#e8e6dc';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+
+            // Score arc
+            const angle = (score / 100) * 2 * Math.PI - Math.PI / 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, -Math.PI / 2, angle);
+            ctx.strokeStyle = '#d97757';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        // Progress Update
+        function updateProgress(percent) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
+
+            if (percent === 0) {
+                document.getElementById('progressText').textContent = 'Not Started';
+            } else if (percent < 100) {
+                document.getElementById('progressText').textContent = 'In Progress';
+            } else {
+                document.getElementById('progressText').textContent = 'Complete';
+            }
+        }
+
+        // Helper Functions
+        function exportData() {
+            console.log('Exporting data...');
+        }
+
+        function startNewAssessment() {
+            userAnswers = {};
+            currentQuestionIndex = 0;
+            updateProgress(0);
+            showSection('home');
+        }
+
+        function openHelp() {
+            alert('Platform Launch Analyzer\n\nAssess your platform idea against key success criteria:\n• Core Definition\n• Network Effects\n• Seeding Strategy\n• Competitive Dynamics\n• Value Creation\n• Pricing Strategy');
+        }
+
+        function resetNetwork() {
+            initNetworkVisualization();
+        }
+
+        function showNetworkViz() {
+            showSection('network');
+        }
+    </script>
+</body>
+</html>
